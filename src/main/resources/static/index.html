@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Мой список покупок</title>
+</head>
+<body>
+<h1>Мой список покупок</h1>
+
+<input type="text" id="name" placeholder="Добавьте товар">
+<button onclick="add()">Добавить</button>
+
+<div id="list"></div>
+
+<script>
+    const API = '/api/shopping-list';
+
+    async function load() {
+        const res = await fetch(API);
+        const items = await res.json();
+
+        if(items.length === 0) {
+            document.getElementById('list').innerHTML = 'Пусто';
+            return;
+        }
+
+        let html = '';
+        for(let item of items) {
+            html += '<div>';
+            html += item.purchased ? '<s>' + item.name + '</s>' : item.name;
+            html += ' <button onclick="buy(' + item.id + ')">Куплен</button>';
+            html += ' <button onclick="del(' + item.id + ')">Удалить</button>';
+            html += '</div>';
+        }
+        document.getElementById('list').innerHTML = html;
+    }
+
+    async function add() {
+        const name = document.getElementById('name').value;
+        if(name) {
+            await fetch(API, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: name})
+            });
+            document.getElementById('name').value = '';
+            load();
+        }
+    }
+
+    async function buy(id) {
+        await fetch(API + '/' + id + '/purchase', {method: 'PUT'});
+        load();
+    }
+
+    async function del(id) {
+        if(confirm('Удалить?')) {
+            await fetch(API + '/' + id, {method: 'DELETE'});
+            load();
+        }
+    }
+
+    load();
+</script>
+</body>
+</html>
